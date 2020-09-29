@@ -1,5 +1,3 @@
-# Copyright (c) Jupyter Development Team.
-# Distributed under the terms of the Modified BSD License.
 ARG BASE_CONTAINER=jupyter/minimal-notebook
 FROM $BASE_CONTAINER
 
@@ -46,7 +44,7 @@ RUN conda install --quiet --yes \
     'vincent=0.4.*' \
     'widgetsnbextension=3.5.*'\
     'xlrd=1.2.*' \
-    'jupyterlab'\
+    'jupyterlab=*'\
     && \
     conda clean --all -f -y && \
     # Activate ipywidgets extension in the environment that runs the notebook server
@@ -64,7 +62,7 @@ RUN conda install --quiet --yes \
     rm -rf "/home/${NB_USER}/.node-gyp" && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
-RUN conda install -c conda-forge jupyterhub
+
 # Install facets which does not have a pip or conda package at the moment
 WORKDIR /tmp
 RUN git clone https://github.com/PAIR-code/facets.git && \
@@ -79,6 +77,63 @@ ENV XDG_CACHE_HOME="/home/${NB_USER}/.cache/"
 RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \
     fix-permissions "/home/${NB_USER}"
 
+USER root 
+
+# R pre-requisites
+RUN apt-get update && \
+    apt-get install -y curl && \
+    #apt-get install -y openjdk-11-jdk openjdk-11-jre && \
+    apt-get install -y --no-install-recommends \
+    fonts-dejavu \
+    unixodbc \
+    unixodbc-dev \
+    r-cran-rodbc \
+    gfortran \
+    gcc && \
+    rm -rf /var/lib/apt/lists/*
+
+# Fix for devtools https://github.com/conda-forge/r-devtools-feedstock/issues/4
+RUN ln -s /bin/tar /bin/gtar
+
 USER $NB_UID
+# R packages
+RUN conda install --quiet --yes \
+    'r-base=*' \
+    'r-rjava=*' \
+    "r-sqlrender=*"\
+    'r-caret=*' \
+    'r-crayon=*' \
+    'r-devtools=*' \
+    'r-forecast=*' \
+    'r-hexbin=*' \
+    'r-htmltools=*' \
+    'r-htmlwidgets=*' \
+    'r-irkernel=*' \
+    'r-nycflights13=*' \
+    'r-randomforest=*' \
+    'r-rcurl=*' \
+    'r-rmarkdown=*' \
+    'r-rodbc=*' \
+    'r-rsqlite=*' \
+    'r-shiny=*' \
+    'r-tidyverse=*' \
+    'unixodbc=*' \
+    'r-databaseconnectorjars=*'\
+    'r-data.table=*'\
+    'r-tidymodels=*' \
+    && \
+    conda clean --all -f -y && \
+    fix-permissions "${CONDA_DIR}"
+
+# Install e1071 R package (dependency of the caret R package)
+RUN conda install --quiet --yes r-e1071
+#USER root
+#RUN  R CMD javareconf
+
+
+#RUN curl -#ROL https://www.rforge.net/rJava/snapshot/rJava_0.9-13.tar.gz && \
+#        R CMD INSTALL rJava_0.9-13.tar.gz
+
+#USER $NB_UID
 
 WORKDIR $HOME

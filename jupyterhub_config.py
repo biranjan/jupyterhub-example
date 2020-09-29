@@ -69,7 +69,7 @@ data_dir = os.environ.get('DATA_VOLUME_CONTAINER', '/data')
 #     password=os.environ['POSTGRES_PASSWORD'],
 #     db=os.environ['POSTGRES_DB'],
 # )
-
+c.JupyterHub.shutdown_on_logout = True
 # Whitlelist users and admins
 c.Authenticator.whitelist = {'test1','admin1','admin','test'}
 c.Authenticator.admin_users = {'admin'}
